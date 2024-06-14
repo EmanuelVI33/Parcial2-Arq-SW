@@ -1,19 +1,138 @@
 import { Product } from "@/interfaces/product";
-import { createContext, ReactNode, useState } from "react";
+import { createContext, ReactNode, useReducer } from 'react';
 import { Order, OrderDetail } from '../interfaces/order';
-import { v4 as uuidv4 } from 'uuid';
+import { OrderProcessor } from "@/class/Order/Strategy/OrderProccesor";
+import { NoDiscountStrategy } from "@/class/Order/Strategy/NoDiscountStrategy";
+import { DiscountStrategy } from "@/class/Order/Strategy/DiscountStrategy";
+import { OrderImpl } from "@/class/Order/State/OrderImp";
+
+// Estado inicial y tipos de acciones
+interface OrderState {
+    orders: { [key: string]: Order };
+    orderDetail: OrderDetail[];
+    processor: OrderProcessor;
+}
+
+type Action =
+    | { type: 'ADD_ORDER'; }
+    | { type: 'ADD_PRODUCT'; payload: { product: Product; amount: number } }
+    | { type: 'CLEAR_ORDER_DETAIL' }
+    | { type: 'SAVE_ORDER' }
+    | { type: 'DELETE_PRODUCT'; payload: { index: number } }
+    | { type: 'SET_PROCESSOR'; payload: { strategy: DiscountStrategy } }
+    // Acciones de State
+    | { type: 'COMPLETE_ORDER'; payload: { id: string } }
+    | { type: 'CANCEL_ORDER'; payload: { id: string } }
+    | { type: 'NOTIFY_ORDER'; payload: { id: string } }
+    | { type: 'MODIFY_ORDER_DETAILS'; payload: { id: string; newDetails: OrderDetail[] } }
+    | { type: 'GENERATE_INVOICE'; payload: { id: string } };  
+
+const orderReducer = (state: OrderState, action: Action): OrderState => {
+    switch (action.type) {
+        case 'ADD_ORDER': {
+            // Calcultar con strategy
+            const total = state.processor.calculateTotalWithDiscount(state.orderDetail);
+            // Crear order con descuento aplicado
+            const newOrder = new OrderImpl(state.orderDetail, total);
+
+            return {
+                ...state,
+                orders: {
+                    ...state.orders,
+                    [newOrder.id]: newOrder,
+                },
+                orderDetail: [], // Limpiar detalles del pedido después de agregar el pedido
+            };
+        }
+        case 'ADD_PRODUCT': {
+            const { product, amount } = action.payload;
+            const subTotal = Number(product.salePrice) * amount;
+            const detail: OrderDetail = {
+                product,
+                unitPrice: Number(product.salePrice),
+                amount,
+                subTotal,
+            };
+            const productExists = state.orderDetail.some(d => d.product.id === product.id);
+            if (productExists) {
+                return state;
+            }
+            return {
+                ...state,
+                orderDetail: [...state.orderDetail, detail],
+            };
+        }
+        case 'CLEAR_ORDER_DETAIL':
+            return {
+                ...state,
+                orderDetail: [],
+            };
+        case 'SAVE_ORDER':
+            console.log(state.orderDetail);
+            return {
+                ...state,
+                orderDetail: [],
+            };
+        case 'DELETE_PRODUCT': {
+            const newOrderDetails = [...state.orderDetail];
+            newOrderDetails.splice(action.payload.index, 1); // Elimina el elemento en el índice especificado
+            return {
+                ...state,
+                orderDetail: newOrderDetails,
+            };
+        }
+        case 'SET_PROCESSOR':
+            state.processor.setStrategy(action.payload.strategy);
+            return { ...state };
+
+        // Estado
+        case 'COMPLETE_ORDER': {
+            const order = state.orders[action.payload.id];
+            order.completeOrder();
+            return { ...state };
+        }
+        case 'CANCEL_ORDER': {
+            const order = state.orders[action.payload.id];
+            order.cancelOrder();
+            return { ...state };
+        }
+        case 'NOTIFY_ORDER': {
+            const order = state.orders[action.payload.id];
+            order.notify();
+            return { ...state };
+        }
+        case 'MODIFY_ORDER_DETAILS': {
+            const order = state.orders[action.payload.id];
+            order.modifyOrderDetails(action.payload.newDetails);
+            return { ...state };
+        }
+        case 'GENERATE_INVOICE': {
+            const order = state.orders[action.payload.id];
+            order.generateInvoice();
+            return { ...state };
+        }
+        default:
+            return state;
+    }
+};
 
 interface OrderContextType {
-    // Order
-    order: OrderState;
-    handleAddOrder: () => void
-    
-    // Order datail
+    order: { [key: string]: Order };
+    handleAddOrder: () => void;
+    // Order deetail
     orderDetail: OrderDetail[];
     handleAddProduct: (product: Product, amount: number) => void;
     handleClear: () => void;
     handleSaveOrder: () => void;
     handleDelete: (index: number) => void;
+    // Strategy
+    setProcessor: (strategy: DiscountStrategy) => void;
+    // State
+    completeOrder: (id: string) => void;
+    cancelOrder: (id: string) => void;
+    notifyOrder: (id: string) => void;
+    modifyOrderDetails: (id: string, newDetails: OrderDetail[]) => void;
+    generateInvoice: (id: string) => void;
 }
 
 export const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -22,79 +141,81 @@ type OrderProviderProp =  {
     children: ReactNode;
 }
 
-interface OrderState {
-    [key: string]: Order;
-  }
+// Estado inicial
+const initialState: OrderState = {
+    orders: {},
+    orderDetail: [],
+    processor: new OrderProcessor(new NoDiscountStrategy()),
+};
 
 export const OrderProvider = ({ children }: OrderProviderProp) => {
-    const [order, setOrder] = useState<OrderState>({});
-    const [orderDetail, setOrderDetail] = useState<OrderDetail[]>([]);
+    const [state, dispatch] = useReducer(orderReducer, initialState);
+    const { orderDetail } = state;
 
     const handleAddOrder = () => {
-        const total = orderDetail.reduce((total, detail) => total + detail.subTotal, 0);
-        const newOrder: Order = {
-            id: uuidv4(),
-            total,
-            orderDetail: [...orderDetail],
-        };
-
-        setOrder((prevOrders) => ({
-            ...prevOrders,
-            [newOrder.id]: newOrder,
-        }));
-        setOrderDetail([]); // Clear order details after adding order
+        dispatch({ type: 'ADD_ORDER' });
     };
 
     const handleAddProduct = (product: Product, amount: number) => {
-        console.log(product, amount);
-        const { salePrice } = product;
-        const subTotal = Number(salePrice) * amount;
- 
-        const detail: OrderDetail = { 
-            product: product, 
-            unitPrice: Number(salePrice), 
-            amount, 
-            subTotal,
-        };
-
-        setOrderDetail(orderDetail => {
-            const productExists = orderDetail.some(detail => detail.product.id === product.id);
-        
-            if (productExists) {
-              return orderDetail;
-            }
-        
-            return [...orderDetail, detail];
-        });
-    }
+        dispatch({ type: 'ADD_PRODUCT', payload: { product, amount } });
+    };
 
     const handleClear = () => {
-        setOrderDetail([]);
-    }
-    
+        dispatch({ type: 'CLEAR_ORDER_DETAIL' });
+    };
+
     const handleSaveOrder = () => {
-        console.log(orderDetail);
-        handleClear();
-    }
+        dispatch({ type: 'SAVE_ORDER' });
+    };
 
-    const handleDelete = (index: number)  => {
-        setOrderDetail(prevOrderDetails => {
-            const newOrderDetails = [...prevOrderDetails];
-            newOrderDetails.splice(index, 1); // Elimina el elemento en el índice especificado
-            return newOrderDetails;
-        });
-    }
+    const handleDelete = (index: number) => {
+        dispatch({ type: 'DELETE_PRODUCT', payload: { index } });
+    };
 
-    return <OrderContext.Provider value={{ 
-       order,
-       handleAddOrder,
-       orderDetail,
-       handleAddProduct,
-       handleClear,
-       handleSaveOrder,
-       handleDelete,
-    }}>
-        {children}
-    </OrderContext.Provider>;
+    const setProcessor = (strategy: DiscountStrategy) => {
+        dispatch({ type: 'SET_PROCESSOR', payload: { strategy } });
+    };
+
+    const completeOrder = (id: string) => {
+        dispatch({ type: 'COMPLETE_ORDER', payload: { id } });
+    };
+
+    const cancelOrder = (id: string) => {
+        dispatch({ type: 'CANCEL_ORDER', payload: { id } });
+    };
+
+    const notifyOrder = (id: string) => {
+        dispatch({ type: 'NOTIFY_ORDER', payload: { id } });
+    };
+
+    const modifyOrderDetails = (id: string, newDetails: OrderDetail[]) => {
+        dispatch({ type: 'MODIFY_ORDER_DETAILS', payload: { id, newDetails } });
+    };
+
+    const generateInvoice = (id: string) => {
+        dispatch({ type: 'GENERATE_INVOICE', payload: { id } });
+    };
+
+    return (
+        <OrderContext.Provider value={{
+            order: state.orders,
+            handleAddOrder,
+            orderDetail,
+            handleAddProduct,
+            handleClear,
+            handleSaveOrder,
+            handleDelete,
+            // Cambiar el tipo de stratetegia
+            setProcessor,
+            // State
+            completeOrder,
+            cancelOrder,
+            notifyOrder,
+            modifyOrderDetails, 
+            generateInvoice,
+        }}>
+            {children}
+        </OrderContext.Provider>
+    );
 };
   

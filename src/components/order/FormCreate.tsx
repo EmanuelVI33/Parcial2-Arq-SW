@@ -12,6 +12,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useOrderFormCreate } from "@/hooks/order/use-order-form-create";
+import { SelectGroup } from "@radix-ui/react-select";
+import { useOrderContext } from "@/hooks/order/use-order-context";
+import { NoDiscountStrategy } from "@/class/Order/Strategy/NoDiscountStrategy";
+import { TenPercentDiscountStrategy } from "@/class/Order/Strategy/TenPercentDiscountStrategy";
+import { FifteenPercentDiscountStrategy } from "@/class/Order/Strategy/FifteenPercentDiscountStrategy";
+
+// Opciones de descuentos
+const discountOptions = [
+  { label: 'Sin Descuento', value: 'no-discount', processor: new NoDiscountStrategy() },
+  { label: '10% Descuento', value: '10-percent', processor: new TenPercentDiscountStrategy() },
+  { label: '15% Descuento', value: '15-percent', processor: new FifteenPercentDiscountStrategy() },
+];
+
 
 const formSchema = z.object({
   amount: z.string().min(1),
@@ -19,7 +32,16 @@ const formSchema = z.object({
 });
 
 function FormCreateOrder() {
+  const { setProcessor } = useOrderContext();
   const { products, handleAddProduct } = useOrderFormCreate();
+
+  // Funcion para cambiar de plantilla
+  const handleSelect = (value: string) => {
+    const selectedOption = discountOptions.find(option => option.value === value);
+    if (selectedOption) {
+        setProcessor(selectedOption.processor);
+    }
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -81,7 +103,21 @@ function FormCreateOrder() {
               )}
             />
           </div>
-          <div className="flex justify-end my-1">
+          <div className="flex justify-between my-1">
+            <Select onValueChange={handleSelect}>
+              <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Aplicar Descuento" />
+              </SelectTrigger>
+              <SelectContent>
+                  <SelectGroup>
+                      {discountOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                          </SelectItem>
+                      ))}
+                  </SelectGroup>
+              </SelectContent>
+            </Select>
             <Button type="submit" className="w-1/4">Agregar</Button>
           </div>
         </form>
