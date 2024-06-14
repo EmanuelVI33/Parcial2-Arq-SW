@@ -1,24 +1,30 @@
-import { Order, OrderDetail } from "@/interfaces/order";
+import { OrderDetail } from "@/interfaces/order";
 import { OrderState } from "./OrderState";
+import { OrderStageContext } from "./OrderStageContext";
+import { CompletedState } from "./CompletedState";
+import { CancelledState } from "./CanceledState";
 
 export class PendingState implements OrderState {
-    completeOrder(order: Order): void {
-        order.setState(new CompletedState());
+    constructor(private order: OrderStageContext) {}
+
+    completeOrder(): void {
+        this.order.setState(new CompletedState(this.order));
     }
 
-    cancelOrder(order: Order): void {
-        order.setState(new CanceledState());
+    cancelOrder(): void {
+        this.order.setState(new CancelledState(this.order));
     }
 
-    notify(order: Order): void {
-        console.log("Sending reminder notification...");
+    notify(): void {
+        console.log("Order notification sent.");
     }
 
-    modifyOrderDetails(order: Order, newDetails: OrderDetail[]): void {
-        order.orderDetail = newDetails;
+    modifyOrderDetails(newDetails: OrderDetail[]): void {
+        this.order.orderDetail = newDetails;
+        console.log("Order details modified in pending state.");
     }
 
-    generateInvoice(order: Order): void {
-        throw new Error("Cannot generate invoice for a pending order.");
+    generateInvoice(): void {
+        console.log("Invoice generated for pending order.");
     }
 }

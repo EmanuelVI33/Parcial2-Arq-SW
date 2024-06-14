@@ -1,24 +1,27 @@
-import { Order, OrderDetail } from "@/interfaces/order";
+import {  OrderDetail } from "@/interfaces/order";
 import { OrderState } from "./OrderState";
+import { OrderStageContext } from "./OrderStageContext";
 
-export class CanceledState implements OrderState {
-    completeOrder(order: Order): void {
-        throw new Error("Cannot complete a canceled order.");
+export class CancelledState implements OrderState {
+    constructor(private context: OrderStageContext) {}
+
+    completeOrder(): void {
+        console.log("Cannot complete cancelled order.");
     }
 
-    cancelOrder(order: Order): void {
-        throw new Error("Order is already canceled.");
+    cancelOrder(): void {
+        console.log("Order is already cancelled.");
     }
 
-    notify(order: Order): void {
-        console.log("Sending cancellation notification...");
+    notify(): void {
+        console.log("Order notification sent.");
     }
 
-    modifyOrderDetails(order: Order, newDetails: OrderDetail[]): void {
-        throw new Error("Cannot modify a canceled order.");
+    modifyOrderDetails(newDetails: OrderDetail[]): void {
+        console.log("Cannot modify order details after cancellation.");
     }
 
-    generateInvoice(order: Order): void {
-        throw new Error("Cannot generate invoice for a canceled order.");
+    generateInvoice(): void {
+        console.log("Invoice not generated for cancelled order.");
     }
 }

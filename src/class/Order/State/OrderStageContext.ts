@@ -3,7 +3,7 @@ import { OrderState } from "./OrderState";
 import { v4 as uuidv4 } from 'uuid';
 import { PendingState } from "./PendingState";
 
-export class OrderImpl implements Order {
+export class OrderStageContext implements Order {
     id: string;
     total: number;
     orderDetail: OrderDetail[];
@@ -13,7 +13,7 @@ export class OrderImpl implements Order {
         this.id = uuidv4();
         this.total = total;
         this.orderDetail = [...orderDetail];
-        this.state = new PendingState(); // Estado inicial
+        this.state = new PendingState(this); // Estado inicial
     }
 
     setState(state: OrderState): void {
@@ -21,26 +21,22 @@ export class OrderImpl implements Order {
     }
 
     completeOrder(): void {
-        this.state.completeOrder(this);
+        this.state.completeOrder();
     }
 
     cancelOrder(): void {
-        this.state.cancelOrder(this);
+        this.state.cancelOrder();
     }
 
     notify(): void {
-        this.state.notify(this);
+        this.state.notify();
     }
 
     modifyOrderDetails(newDetails: OrderDetail[]): void {
-        this.state.modifyOrderDetails(this, newDetails);
+        this.state.modifyOrderDetails(newDetails);
     }
 
     generateInvoice(): void {
-        this.state.generateInvoice(this);
-    }
-
-    private calculateTotal(orderDetail: OrderDetail[]): number {
-        return orderDetail.reduce((acc, detail) => acc + detail.subTotal, 0);
+        this.state.generateInvoice();
     }
 }

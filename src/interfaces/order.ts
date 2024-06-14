@@ -14,7 +14,6 @@ export interface Order {
     generateInvoice(): void;
 }
 
-
 export interface OrderDetail {
     product: Product;
     amount: number;

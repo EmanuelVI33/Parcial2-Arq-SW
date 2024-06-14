@@ -1,7 +1,6 @@
 import { OrderDetail } from "@/interfaces/order";
 import { DiscountStrategy } from "./DiscountStrategy";
 
-// El algoritmo de procesamiento de órdenes
 export class OrderProcessor {
     private strategy: DiscountStrategy;
 

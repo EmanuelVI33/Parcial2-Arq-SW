@@ -4,7 +4,7 @@ import { Order, OrderDetail } from '../interfaces/order';
 import { OrderProcessor } from "@/class/Order/Strategy/OrderProccesor";
 import { NoDiscountStrategy } from "@/class/Order/Strategy/NoDiscountStrategy";
 import { DiscountStrategy } from "@/class/Order/Strategy/DiscountStrategy";
-import { OrderImpl } from "@/class/Order/State/OrderImp";
+import { OrderStageContext } from "@/class/Order/State/OrderStageContext";
 
 // Estado inicial y tipos de acciones
 interface OrderState {
@@ -33,7 +33,7 @@ const orderReducer = (state: OrderState, action: Action): OrderState => {
             // Calcultar con strategy
             const total = state.processor.calculateTotalWithDiscount(state.orderDetail);
             // Crear order con descuento aplicado
-            const newOrder = new OrderImpl(state.orderDetail, total);
+            const newOrder = new OrderStageContext(state.orderDetail, total);
 
             return {
                 ...state,
@@ -123,7 +123,6 @@ interface OrderContextType {
     orderDetail: OrderDetail[];
     handleAddProduct: (product: Product, amount: number) => void;
     handleClear: () => void;
-    handleSaveOrder: () => void;
     handleDelete: (index: number) => void;
     // Strategy
     setProcessor: (strategy: DiscountStrategy) => void;
@@ -164,10 +163,6 @@ export const OrderProvider = ({ children }: OrderProviderProp) => {
         dispatch({ type: 'CLEAR_ORDER_DETAIL' });
     };
 
-    const handleSaveOrder = () => {
-        dispatch({ type: 'SAVE_ORDER' });
-    };
-
     const handleDelete = (index: number) => {
         dispatch({ type: 'DELETE_PRODUCT', payload: { index } });
     };
@@ -203,7 +198,6 @@ export const OrderProvider = ({ children }: OrderProviderProp) => {
             orderDetail,
             handleAddProduct,
             handleClear,
-            handleSaveOrder,
             handleDelete,
             // Cambiar el tipo de stratetegia
             setProcessor,
