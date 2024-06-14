@@ -5,6 +5,7 @@ import { OrderProcessor } from "@/class/Order/Strategy/OrderProccesor";
 import { NoDiscountStrategy } from "@/class/Order/Strategy/NoDiscountStrategy";
 import { DiscountStrategy } from "@/class/Order/Strategy/DiscountStrategy";
 import { OrderStageContext } from "@/class/Order/State/OrderStageContext";
+import { toast } from "sonner";
 
 // Estado inicial y tipos de acciones
 interface OrderState {
@@ -25,7 +26,8 @@ type Action =
     | { type: 'CANCEL_ORDER'; payload: { id: string } }
     | { type: 'NOTIFY_ORDER'; payload: { id: string } }
     | { type: 'MODIFY_ORDER_DETAILS'; payload: { id: string; newDetails: OrderDetail[] } }
-    | { type: 'GENERATE_INVOICE'; payload: { id: string } };  
+    | { type: 'GENERATE_INVOICE'; payload: { id: string } }
+    | { type: 'CHANGE_STATE'; payload: { id: string; newState: string } };  
 
 const orderReducer = (state: OrderState, action: Action): OrderState => {
     switch (action.type) {
@@ -111,6 +113,19 @@ const orderReducer = (state: OrderState, action: Action): OrderState => {
             order.generateInvoice();
             return { ...state };
         }
+        case 'CHANGE_STATE': {
+            console.log(`Cambiando de estado`);
+            const { id, newState } = action.payload;
+            const order = state.orders[id];
+            try {
+                order.changeState(newState);
+                // Notificar
+                toast.success(order.notify());
+            } catch (error) {
+                toast.error(error.message);
+            }
+            return { ...state };
+        }
         default:
             return state;
     }
@@ -132,6 +147,8 @@ interface OrderContextType {
     notifyOrder: (id: string) => void;
     modifyOrderDetails: (id: string, newDetails: OrderDetail[]) => void;
     generateInvoice: (id: string) => void;
+
+    changeOrderState: (id: string, newState: string) => void;
 }
 
 export const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -191,6 +208,10 @@ export const OrderProvider = ({ children }: OrderProviderProp) => {
         dispatch({ type: 'GENERATE_INVOICE', payload: { id } });
     };
 
+    const changeOrderState = (id: string, newState: string) => {
+        dispatch({ type: 'CHANGE_STATE', payload: { id, newState } });
+    };
+
     return (
         <OrderContext.Provider value={{
             order: state.orders,
@@ -207,6 +228,8 @@ export const OrderProvider = ({ children }: OrderProviderProp) => {
             notifyOrder,
             modifyOrderDetails, 
             generateInvoice,
+
+            changeOrderState,
         }}>
             {children}
         </OrderContext.Provider>

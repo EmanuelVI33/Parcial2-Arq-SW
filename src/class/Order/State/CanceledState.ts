@@ -1,16 +1,20 @@
 import { OrderState } from "./OrderState";
 
 export class CancelledState extends OrderState {
+    getStatus(): string {
+        return "Cancelado";
+    }
+
     completeOrder(): void {
-        console.log("Cannot complete cancelled order.");
+        throw new Error("Cannot complete cancelled order.");
     }
 
     cancelOrder(): void {
-        console.log("Order is already cancelled.");
+        throw new Error("Order is already cancelled.");
     }
 
-    notify(): void {
-        console.log("Order notification sent.");
+    notify(): string {
+        return "Order notification sent.";
     }
 }
 

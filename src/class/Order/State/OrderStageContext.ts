@@ -16,6 +16,10 @@ export class OrderStageContext implements Order {
         this.state = new PendingState(this); // Estado inicial
     }
 
+    getStatus(): string {
+        return this.state.getStatus();
+    }
+
     setState(state: OrderState): void {
         this.state = state;
     }
@@ -28,8 +32,8 @@ export class OrderStageContext implements Order {
         this.state.cancelOrder();
     }
 
-    notify(): void {
-        this.state.notify();
+    notify(): string {
+        return this.state.notify();
     }
 
     modifyOrderDetails(newDetails: OrderDetail[]): void {
@@ -38,5 +42,9 @@ export class OrderStageContext implements Order {
 
     generateInvoice(): void {
         this.state.generateInvoice();
+    }
+
+    changeState(newState: string): void {
+        this.state.changeState(newState);
     }
 }

@@ -4,6 +4,10 @@ import { CompletedState } from "./CompletedState";
 import { CancelledState } from "./CanceledState";
 
 export class PendingState extends OrderState {
+    getStatus(): string {
+        return "Pendiente";
+    }
+
     completeOrder(): void {
         this.order.setState(new CompletedState(this.order));
         console.log("Order marked as completed.");
@@ -14,16 +18,12 @@ export class PendingState extends OrderState {
         console.log("Order marked as cancelled.");
     }
 
-    notify(): void {
-        console.log("Order notification sent.");
+    notify(): string {
+        return "Order notification sent.";
     }
 
     modifyOrderDetails(newDetails: OrderDetail[]): void {
         this.order.orderDetail = newDetails;
         console.log("Order details modified in pending state.");
-    }
-
-    generateInvoice(): void {
-        console.log("Invoice generated for pending order.");
     }
 }

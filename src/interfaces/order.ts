@@ -6,12 +6,14 @@ export interface Order {
     total: number;
     orderDetail: OrderDetail[];
     state: OrderState; // Referencia al estado actual
+    getStatus(): string;
     setState(state: OrderState): void;
     completeOrder(): void;
     cancelOrder(): void;
-    notify(): void;
+    notify(): string;
     modifyOrderDetails(newDetails: OrderDetail[]): void;
     generateInvoice(): void;
+    changeState(newState: string): void;
 }
 
 export interface OrderDetail {

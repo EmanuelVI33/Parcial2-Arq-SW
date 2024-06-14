@@ -1,16 +1,24 @@
 import { OrderState } from "./OrderState";
 
 export class CompletedState extends OrderState {
+    getStatus(): string {
+        return "Completado";
+    }
+
     completeOrder(): void {
-        console.log("Order is already completed.");
+        throw new Error("Order is already completed.");
     }
 
     cancelOrder(): void {
-        console.log("Cannot cancel order after completion.");
+        throw new Error("Cannot cancel order after completion.");
     }
 
-    notify(): void {
-        console.log("Order notification sent.");
+    notify(): string {
+        return "Order notification sent.";
+    }
+
+    generateInvoice(): void {
+        console.log("Factura generada");
     }
 }
 

@@ -8,9 +8,17 @@ import {
 } from "@/components/ui/table"
 import { Button } from "../ui/button";
 import { useOrderContext } from '../../hooks/order/use-order-context';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+
+const options = [
+    'Pendiente', 'Completado', 'Cancelado'];
 
 function TableOrder() {
-    const { order } = useOrderContext();
+    const { order, changeOrderState } = useOrderContext();
+
+    const handleChangeState = (orderId: string, newState: string) => {
+        changeOrderState(orderId, newState);
+    };
 
     return (
         <Table>
@@ -23,11 +31,28 @@ function TableOrder() {
             <TableBody>
                 {order && Object.values(order).map((item, index) => {
                     const { id, total } = item;
+                    const status = item.getStatus();
 
                     return (
                         <TableRow key={id}>
                             <TableCell className="font-medium">{index + 1}</TableCell>
                             <TableCell>{total}</TableCell>
+                            <TableCell>
+                                <Select defaultValue={status} onValueChange={(newValue) => handleChangeState(id, newValue)}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Aplicar Descuento" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        {options.map((option, index) => (
+                                            <SelectItem key={index} value={option}>
+                                                {option}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectGroup>
+                                </SelectContent>
+                                </Select>
+                            </TableCell>
                             <TableCell className="text-center flex justify-around">
                                 <Button>
                                     <span className="mr-2">Eliminar</span>
