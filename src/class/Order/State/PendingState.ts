@@ -1,18 +1,17 @@
 import { OrderDetail } from "@/interfaces/order";
 import { OrderState } from "./OrderState";
-import { OrderStageContext } from "./OrderStageContext";
 import { CompletedState } from "./CompletedState";
 import { CancelledState } from "./CanceledState";
 
-export class PendingState implements OrderState {
-    constructor(private order: OrderStageContext) {}
-
+export class PendingState extends OrderState {
     completeOrder(): void {
         this.order.setState(new CompletedState(this.order));
+        console.log("Order marked as completed.");
     }
 
     cancelOrder(): void {
         this.order.setState(new CancelledState(this.order));
+        console.log("Order marked as cancelled.");
     }
 
     notify(): void {

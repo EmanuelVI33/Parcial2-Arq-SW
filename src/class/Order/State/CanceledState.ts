@@ -1,10 +1,6 @@
-import {  OrderDetail } from "@/interfaces/order";
 import { OrderState } from "./OrderState";
-import { OrderStageContext } from "./OrderStageContext";
 
-export class CancelledState implements OrderState {
-    constructor(private context: OrderStageContext) {}
-
+export class CancelledState extends OrderState {
     completeOrder(): void {
         console.log("Cannot complete cancelled order.");
     }
@@ -16,12 +12,5 @@ export class CancelledState implements OrderState {
     notify(): void {
         console.log("Order notification sent.");
     }
-
-    modifyOrderDetails(newDetails: OrderDetail[]): void {
-        console.log("Cannot modify order details after cancellation.");
-    }
-
-    generateInvoice(): void {
-        console.log("Invoice not generated for cancelled order.");
-    }
 }
+
